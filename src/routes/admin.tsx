@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Pencil, Trash2, Plus, Check } from "lucide-react";
+import { Pencil, Trash2, Plus, Check, PhoneCall, ShieldCheck } from "lucide-react";
+import { normalizeNigeriaPhone, formatNigeriaPhoneDisplay } from "@/lib/phone";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -18,7 +19,8 @@ export const Route = createFileRoute("/admin")({
 
 const empty = {
   id: "", name: "", profession: "", phone: "", workshop_location: "",
-  available_hours: "", bio: "", category_id: "", map_x: 50, map_y: 50, is_available: true, is_approved: true,
+  available_hours: "", bio: "", category_id: "", map_x: 50, map_y: 50,
+  is_available: true, is_approved: true, phone_verified: false,
 };
 
 function AdminPage() {
@@ -59,11 +61,20 @@ function AdminPage() {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
-    const payload: any = { ...editing };
+    const normalized = normalizeNigeriaPhone(editing.phone);
+    if (!normalized) {
+      return toast.error("Phone must be a valid Nigerian mobile number");
+    }
+    const payload: any = { ...editing, phone: normalized };
     delete payload.categories;
     if (!payload.category_id) payload.category_id = null;
     payload.map_x = Number(payload.map_x);
     payload.map_y = Number(payload.map_y);
+    // If admin just toggled phone_verified on, stamp the timestamp
+    if (payload.phone_verified && !payload.phone_verified_at) {
+      payload.phone_verified_at = new Date().toISOString();
+    }
+    if (!payload.phone_verified) payload.phone_verified_at = null;
 
     const { id, ...rest } = payload;
     const { error } = id
@@ -72,6 +83,16 @@ function AdminPage() {
     if (error) return toast.error(error.message);
     toast.success("Saved");
     setEditing(null);
+    refresh();
+  };
+
+  const verifyPhone = async (a: any) => {
+    if (!confirm(`Confirm you've called ${a.phone} and spoken to ${a.name}?`)) return;
+    const { error } = await supabase.from("artisans")
+      .update({ phone_verified: true, phone_verified_at: new Date().toISOString() })
+      .eq("id", a.id);
+    if (error) return toast.error(error.message);
+    toast.success("Phone marked verified");
     refresh();
   };
 

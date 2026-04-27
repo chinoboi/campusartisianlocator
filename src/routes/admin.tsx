@@ -18,7 +18,7 @@ export const Route = createFileRoute("/admin")({
 
 const empty = {
   id: "", name: "", profession: "", phone: "", workshop_location: "",
-  available_hours: "", bio: "", category_id: "", map_x: 50, map_y: 50, is_available: true,
+  available_hours: "", bio: "", category_id: "", map_x: 50, map_y: 50, is_available: true, is_approved: true,
 };
 
 function AdminPage() {
@@ -33,7 +33,7 @@ function AdminPage() {
   }, [user, loading, navigate]);
 
   const refresh = async () => {
-    const { data: a } = await supabase.from("artisans").select("*, categories(name)").order("created_at", { ascending: false });
+    const { data: a } = await supabase.from("artisans").select("*, categories(name)").order("is_approved", { ascending: true }).order("created_at", { ascending: false });
     setArtisans(a ?? []);
     const { data: c } = await supabase.from("categories").select("*").order("name");
     setCategories(c ?? []);

@@ -21,6 +21,7 @@ export type Database = {
           category_id: string | null
           created_at: string
           id: string
+          is_approved: boolean
           is_available: boolean
           map_x: number | null
           map_y: number | null
@@ -29,6 +30,7 @@ export type Database = {
           photo_url: string | null
           profession: string
           rating: number | null
+          submitted_by_email: string | null
           updated_at: string
           workshop_location: string
         }
@@ -38,6 +40,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           id?: string
+          is_approved?: boolean
           is_available?: boolean
           map_x?: number | null
           map_y?: number | null
@@ -46,6 +49,7 @@ export type Database = {
           photo_url?: string | null
           profession: string
           rating?: number | null
+          submitted_by_email?: string | null
           updated_at?: string
           workshop_location: string
         }
@@ -55,6 +59,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           id?: string
+          is_approved?: boolean
           is_available?: boolean
           map_x?: number | null
           map_y?: number | null
@@ -63,6 +68,7 @@ export type Database = {
           photo_url?: string | null
           profession?: string
           rating?: number | null
+          submitted_by_email?: string | null
           updated_at?: string
           workshop_location?: string
         }

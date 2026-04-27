@@ -92,8 +92,7 @@ function RegisterPage() {
         <p className="text-xs uppercase tracking-[0.2em] text-accent font-semibold mb-2">Join the directory</p>
         <h1 className="font-display text-4xl font-bold text-foreground">Register as an artisan</h1>
         <p className="mt-3 text-muted-foreground">
-          Are you a skilled worker on campus? Submit your real details below. An admin will verify and approve
-          before your profile becomes public.
+          Are you a skilled worker on campus? Submit your real details below. An admin will <strong className="text-foreground">call your phone number to verify it</strong> and approve your profile before it appears publicly.
         </p>
       </header>
 
@@ -109,7 +108,23 @@ function RegisterPage() {
           </div>
           <div>
             <Label>Phone number *</Label>
-            <Input required type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <Input
+              required
+              type="tel"
+              inputMode="tel"
+              placeholder="0801 234 5678"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              aria-invalid={form.phone.length > 0 && !normalizedPhone}
+              className={form.phone.length > 0 && !normalizedPhone ? "border-destructive" : ""}
+            />
+            <p className={`text-xs mt-1 ${form.phone.length === 0 ? "text-muted-foreground" : normalizedPhone ? "text-primary" : "text-destructive"}`}>
+              {form.phone.length === 0
+                ? "Nigerian mobile, e.g. 0801 234 5678"
+                : normalizedPhone
+                  ? `✓ ${formatNigeriaPhoneDisplay(normalizedPhone)} — admin will call to verify`
+                  : "Not a valid Nigerian mobile number"}
+            </p>
           </div>
           <div>
             <Label>Your email *</Label>
@@ -138,7 +153,7 @@ function RegisterPage() {
           </div>
         </div>
         <div className="flex justify-end pt-2">
-          <Button type="submit" disabled={busy}>{busy ? "Submitting…" : "Submit for review"}</Button>
+          <Button type="submit" disabled={busy || !normalizedPhone}>{busy ? "Submitting…" : "Submit for review"}</Button>
         </div>
       </form>
     </div>

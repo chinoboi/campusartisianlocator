@@ -119,9 +119,18 @@ function Index() {
             See all <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {featured.map((a) => <ArtisanCard key={a.id} a={a} />)}
-        </div>
+        {featured.length === 0 ? (
+          <div className="border border-dashed border-border rounded-2xl py-12 px-6 text-center bg-card">
+            <p className="text-muted-foreground">
+              No verified artisans yet. Are you one?{" "}
+              <Link to="/register" className="text-primary font-medium hover:underline">Register here</Link>.
+            </p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {featured.map((a) => <ArtisanCard key={a.id} a={a} />)}
+          </div>
+        )}
       </section>
 
       {/* CTA strip */}

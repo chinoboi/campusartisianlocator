@@ -28,6 +28,9 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <Link to="/register" className="hidden sm:inline-flex">
+            <Button size="sm" variant="outline">Register as artisan</Button>
+          </Link>
           {isAdmin && (
             <Link to="/admin">
               <Button variant="outline" size="sm">Admin</Button>

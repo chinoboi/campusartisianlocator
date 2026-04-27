@@ -84,7 +84,15 @@ function ArtisansPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-muted-foreground py-16 text-center">No artisans match your search.</p>
+        <div className="border border-dashed border-border rounded-2xl py-16 px-6 text-center bg-card">
+          <h3 className="font-display text-2xl font-semibold text-foreground">No artisans listed yet</h3>
+          <p className="mt-2 text-muted-foreground max-w-md mx-auto">
+            The directory only shows real, verified artisans. Are you a skilled worker on campus?
+          </p>
+          <a href="/register" className="inline-flex mt-6 items-center px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition">
+            Register as an artisan
+          </a>
+        </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map((a) => <ArtisanCard key={a.id} a={a} />)}

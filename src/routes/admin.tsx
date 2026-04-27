@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Trash2, Plus, Check } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -97,21 +97,33 @@ function AdminPage() {
         <table className="w-full text-sm">
           <thead className="bg-secondary text-muted-foreground text-left">
             <tr>
+              <th className="p-4 font-medium">Status</th>
               <th className="p-4 font-medium">Name</th>
               <th className="p-4 font-medium">Profession</th>
               <th className="p-4 font-medium">Phone</th>
               <th className="p-4 font-medium">Location</th>
-              <th className="p-4 font-medium w-24"></th>
+              <th className="p-4 font-medium w-32"></th>
             </tr>
           </thead>
           <tbody>
+            {artisans.length === 0 && (
+              <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No artisans yet. Submissions from the public registration form will appear here for approval.</td></tr>
+            )}
             {artisans.map((a) => (
               <tr key={a.id} className="border-t border-border">
-                <td className="p-4 font-medium text-foreground">{a.name}</td>
+                <td className="p-4">
+                  <span className={`text-[10px] uppercase tracking-wider px-2 py-1 rounded-full ${a.is_approved ? "bg-primary/10 text-primary" : "bg-accent/15 text-accent"}`}>
+                    {a.is_approved ? "Approved" : "Pending"}
+                  </span>
+                </td>
+                <td className="p-4 font-medium text-foreground">{a.name}{a.submitted_by_email && <div className="text-xs text-muted-foreground font-normal">{a.submitted_by_email}</div>}</td>
                 <td className="p-4 text-muted-foreground">{a.profession}</td>
                 <td className="p-4 text-muted-foreground">{a.phone}</td>
                 <td className="p-4 text-muted-foreground">{a.workshop_location}</td>
-                <td className="p-4 text-right">
+                <td className="p-4 text-right whitespace-nowrap">
+                  {!a.is_approved && (
+                    <button onClick={async () => { const { error } = await supabase.from("artisans").update({ is_approved: true }).eq("id", a.id); if (error) return toast.error(error.message); toast.success("Approved"); refresh(); }} className="inline-flex p-2 hover:bg-secondary rounded-md text-primary" title="Approve"><Check className="h-4 w-4" /></button>
+                  )}
                   <button onClick={() => setEditing(a)} className="inline-flex p-2 hover:bg-secondary rounded-md"><Pencil className="h-4 w-4" /></button>
                   <button onClick={() => del(a.id)} className="inline-flex p-2 hover:bg-secondary rounded-md text-destructive"><Trash2 className="h-4 w-4" /></button>
                 </td>

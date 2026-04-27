@@ -153,6 +153,7 @@ function AdminPage() {
               <div className="md:col-span-2"><Label>Workshop location</Label><Input required value={editing.workshop_location} onChange={(e) => setEditing({ ...editing, workshop_location: e.target.value })} /></div>
               <div><Label>Available hours</Label><Input value={editing.available_hours ?? ""} onChange={(e) => setEditing({ ...editing, available_hours: e.target.value })} /></div>
               <div className="flex items-center gap-3 pt-6"><Switch checked={editing.is_available} onCheckedChange={(v) => setEditing({ ...editing, is_available: v })} /><Label>Currently available</Label></div>
+              <div className="flex items-center gap-3 pt-6"><Switch checked={editing.is_approved} onCheckedChange={(v) => setEditing({ ...editing, is_approved: v })} /><Label>Approved (publicly visible)</Label></div>
               <div><Label>Map X (0–100)</Label><Input type="number" min="0" max="100" value={editing.map_x} onChange={(e) => setEditing({ ...editing, map_x: e.target.value })} /></div>
               <div><Label>Map Y (0–100)</Label><Input type="number" min="0" max="100" value={editing.map_y} onChange={(e) => setEditing({ ...editing, map_y: e.target.value })} /></div>
               <div className="md:col-span-2"><Label>Bio</Label><Textarea value={editing.bio ?? ""} onChange={(e) => setEditing({ ...editing, bio: e.target.value })} /></div>

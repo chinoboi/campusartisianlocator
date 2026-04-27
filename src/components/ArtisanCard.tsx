@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Phone, MapPin, Clock, Star } from "lucide-react";
+import { Phone, MapPin, Clock, Star, ShieldCheck } from "lucide-react";
 
 type Artisan = {
   id: string;
@@ -11,6 +11,7 @@ type Artisan = {
   rating: number | null;
   is_available: boolean;
   photo_url: string | null;
+  phone_verified?: boolean;
 };
 
 export function ArtisanCard({ a }: { a: Artisan }) {
@@ -29,8 +30,13 @@ export function ArtisanCard({ a }: { a: Artisan }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="font-display font-semibold text-lg text-foreground truncate">{a.name}</h3>
-            <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full ${a.is_available ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <h3 className="font-display font-semibold text-lg text-foreground truncate">{a.name}</h3>
+              {a.phone_verified && (
+                <span title="Phone verified by admin" className="text-primary shrink-0"><ShieldCheck className="h-4 w-4" /></span>
+              )}
+            </div>
+            <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${a.is_available ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
               {a.is_available ? "Available" : "Off"}
             </span>
           </div>

@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Pencil, Trash2, Plus, Check } from "lucide-react";
+import { Pencil, Trash2, Plus, Check, PhoneCall, ShieldCheck } from "lucide-react";
+import { normalizeNigeriaPhone, formatNigeriaPhoneDisplay } from "@/lib/phone";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -18,7 +19,8 @@ export const Route = createFileRoute("/admin")({
 
 const empty = {
   id: "", name: "", profession: "", phone: "", workshop_location: "",
-  available_hours: "", bio: "", category_id: "", map_x: 50, map_y: 50, is_available: true, is_approved: true,
+  available_hours: "", bio: "", category_id: "", map_x: 50, map_y: 50,
+  is_available: true, is_approved: true, phone_verified: false,
 };
 
 function AdminPage() {
@@ -59,11 +61,20 @@ function AdminPage() {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editing) return;
-    const payload: any = { ...editing };
+    const normalized = normalizeNigeriaPhone(editing.phone);
+    if (!normalized) {
+      return toast.error("Phone must be a valid Nigerian mobile number");
+    }
+    const payload: any = { ...editing, phone: normalized };
     delete payload.categories;
     if (!payload.category_id) payload.category_id = null;
     payload.map_x = Number(payload.map_x);
     payload.map_y = Number(payload.map_y);
+    // If admin just toggled phone_verified on, stamp the timestamp
+    if (payload.phone_verified && !payload.phone_verified_at) {
+      payload.phone_verified_at = new Date().toISOString();
+    }
+    if (!payload.phone_verified) payload.phone_verified_at = null;
 
     const { id, ...rest } = payload;
     const { error } = id
@@ -72,6 +83,16 @@ function AdminPage() {
     if (error) return toast.error(error.message);
     toast.success("Saved");
     setEditing(null);
+    refresh();
+  };
+
+  const verifyPhone = async (a: any) => {
+    if (!confirm(`Confirm you've called ${a.phone} and spoken to ${a.name}?`)) return;
+    const { error } = await supabase.from("artisans")
+      .update({ phone_verified: true, phone_verified_at: new Date().toISOString() })
+      .eq("id", a.id);
+    if (error) return toast.error(error.message);
+    toast.success("Phone marked verified");
     refresh();
   };
 
@@ -112,15 +133,27 @@ function AdminPage() {
             {artisans.map((a) => (
               <tr key={a.id} className="border-t border-border">
                 <td className="p-4">
-                  <span className={`text-[10px] uppercase tracking-wider px-2 py-1 rounded-full ${a.is_approved ? "bg-primary/10 text-primary" : "bg-accent/15 text-accent"}`}>
-                    {a.is_approved ? "Approved" : "Pending"}
-                  </span>
+                  <div className="flex flex-col gap-1">
+                    <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full w-fit ${a.is_approved ? "bg-primary/10 text-primary" : "bg-accent/15 text-accent"}`}>
+                      {a.is_approved ? "Approved" : "Pending"}
+                    </span>
+                    <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full w-fit inline-flex items-center gap-1 ${a.phone_verified ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                      {a.phone_verified ? <><ShieldCheck className="h-3 w-3" /> Phone verified</> : "Unverified"}
+                    </span>
+                  </div>
                 </td>
                 <td className="p-4 font-medium text-foreground">{a.name}{a.submitted_by_email && <div className="text-xs text-muted-foreground font-normal">{a.submitted_by_email}</div>}</td>
                 <td className="p-4 text-muted-foreground">{a.profession}</td>
-                <td className="p-4 text-muted-foreground">{a.phone}</td>
+                <td className="p-4 text-muted-foreground">
+                  <a href={`tel:${a.phone}`} className="hover:text-primary inline-flex items-center gap-1.5">
+                    <PhoneCall className="h-3 w-3" /> {a.phone}
+                  </a>
+                </td>
                 <td className="p-4 text-muted-foreground">{a.workshop_location}</td>
                 <td className="p-4 text-right whitespace-nowrap">
+                  {!a.phone_verified && (
+                    <button onClick={() => verifyPhone(a)} className="inline-flex p-2 hover:bg-secondary rounded-md text-primary" title="Mark phone verified (after calling)"><ShieldCheck className="h-4 w-4" /></button>
+                  )}
                   {!a.is_approved && (
                     <button onClick={async () => { const { error } = await supabase.from("artisans").update({ is_approved: true }).eq("id", a.id); if (error) return toast.error(error.message); toast.success("Approved"); refresh(); }} className="inline-flex p-2 hover:bg-secondary rounded-md text-primary" title="Approve"><Check className="h-4 w-4" /></button>
                   )}
@@ -140,7 +173,15 @@ function AdminPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div><Label>Name</Label><Input required value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></div>
               <div><Label>Profession</Label><Input required value={editing.profession} onChange={(e) => setEditing({ ...editing, profession: e.target.value })} /></div>
-              <div><Label>Phone</Label><Input required value={editing.phone} onChange={(e) => setEditing({ ...editing, phone: e.target.value })} /></div>
+              <div>
+                <Label>Phone (Nigerian)</Label>
+                <Input required value={editing.phone} onChange={(e) => setEditing({ ...editing, phone: e.target.value })} placeholder="0801 234 5678" />
+                {editing.phone && (
+                  <p className={`text-xs mt-1 ${normalizeNigeriaPhone(editing.phone) ? "text-primary" : "text-destructive"}`}>
+                    {normalizeNigeriaPhone(editing.phone) ? `✓ ${formatNigeriaPhoneDisplay(normalizeNigeriaPhone(editing.phone)!)}` : "Not a valid Nigerian mobile"}
+                  </p>
+                )}
+              </div>
               <div>
                 <Label>Category</Label>
                 <Select value={editing.category_id ?? ""} onValueChange={(v) => setEditing({ ...editing, category_id: v })}>
@@ -154,6 +195,13 @@ function AdminPage() {
               <div><Label>Available hours</Label><Input value={editing.available_hours ?? ""} onChange={(e) => setEditing({ ...editing, available_hours: e.target.value })} /></div>
               <div className="flex items-center gap-3 pt-6"><Switch checked={editing.is_available} onCheckedChange={(v) => setEditing({ ...editing, is_available: v })} /><Label>Currently available</Label></div>
               <div className="flex items-center gap-3 pt-6"><Switch checked={editing.is_approved} onCheckedChange={(v) => setEditing({ ...editing, is_approved: v })} /><Label>Approved (publicly visible)</Label></div>
+              <div className="md:col-span-2 flex items-center gap-3 pt-2 px-4 py-3 bg-secondary rounded-lg">
+                <Switch checked={editing.phone_verified} onCheckedChange={(v) => setEditing({ ...editing, phone_verified: v })} />
+                <div className="flex-1">
+                  <Label className="font-medium">Phone verified by call</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">Only enable after you've actually called this number and confirmed the artisan's identity. Required for public visibility.</p>
+                </div>
+              </div>
               <div><Label>Map X (0–100)</Label><Input type="number" min="0" max="100" value={editing.map_x} onChange={(e) => setEditing({ ...editing, map_x: e.target.value })} /></div>
               <div><Label>Map Y (0–100)</Label><Input type="number" min="0" max="100" value={editing.map_y} onChange={(e) => setEditing({ ...editing, map_y: e.target.value })} /></div>
               <div className="md:col-span-2"><Label>Bio</Label><Textarea value={editing.bio ?? ""} onChange={(e) => setEditing({ ...editing, bio: e.target.value })} /></div>

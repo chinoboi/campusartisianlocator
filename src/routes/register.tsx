@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
+import { normalizeNigeriaPhone, formatNigeriaPhoneDisplay } from "@/lib/phone";
 
 export const Route = createFileRoute("/register")({
   component: RegisterPage,
@@ -23,7 +24,6 @@ export const Route = createFileRoute("/register")({
 const schema = z.object({
   name: z.string().trim().min(2, "Name is required").max(100),
   profession: z.string().trim().min(2, "Profession is required").max(100),
-  phone: z.string().trim().min(7, "Enter a valid phone number").max(20),
   workshop_location: z.string().trim().min(2, "Location is required").max(200),
   available_hours: z.string().trim().max(100).optional(),
   bio: z.string().trim().max(500).optional(),
@@ -41,18 +41,28 @@ function RegisterPage() {
     available_hours: "", bio: "", submitted_by_email: "", category_id: "",
   });
 
+  const normalizedPhone = normalizeNigeriaPhone(form.phone);
+
   useEffect(() => {
     supabase.from("categories").select("*").order("name").then(({ data }) => setCategories(data ?? []));
   }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!normalizedPhone) {
+      return toast.error("Enter a valid Nigerian mobile number (e.g. 0801 234 5678)");
+    }
     const parsed = schema.safeParse(form);
     if (!parsed.success) {
       return toast.error(parsed.error.issues[0]?.message ?? "Please check the form");
     }
     setBusy(true);
-    const payload: any = { ...parsed.data, is_approved: false };
+    const payload: any = {
+      ...parsed.data,
+      phone: normalizedPhone,
+      is_approved: false,
+      phone_verified: false,
+    };
     if (!payload.category_id) delete payload.category_id;
     const { error } = await supabase.from("artisans").insert(payload);
     setBusy(false);
@@ -82,8 +92,7 @@ function RegisterPage() {
         <p className="text-xs uppercase tracking-[0.2em] text-accent font-semibold mb-2">Join the directory</p>
         <h1 className="font-display text-4xl font-bold text-foreground">Register as an artisan</h1>
         <p className="mt-3 text-muted-foreground">
-          Are you a skilled worker on campus? Submit your real details below. An admin will verify and approve
-          before your profile becomes public.
+          Are you a skilled worker on campus? Submit your real details below. An admin will <strong className="text-foreground">call your phone number to verify it</strong> and approve your profile before it appears publicly.
         </p>
       </header>
 
@@ -99,7 +108,23 @@ function RegisterPage() {
           </div>
           <div>
             <Label>Phone number *</Label>
-            <Input required type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <Input
+              required
+              type="tel"
+              inputMode="tel"
+              placeholder="0801 234 5678"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              aria-invalid={form.phone.length > 0 && !normalizedPhone}
+              className={form.phone.length > 0 && !normalizedPhone ? "border-destructive" : ""}
+            />
+            <p className={`text-xs mt-1 ${form.phone.length === 0 ? "text-muted-foreground" : normalizedPhone ? "text-primary" : "text-destructive"}`}>
+              {form.phone.length === 0
+                ? "Nigerian mobile, e.g. 0801 234 5678"
+                : normalizedPhone
+                  ? `✓ ${formatNigeriaPhoneDisplay(normalizedPhone)} — admin will call to verify`
+                  : "Not a valid Nigerian mobile number"}
+            </p>
           </div>
           <div>
             <Label>Your email *</Label>
@@ -128,7 +153,7 @@ function RegisterPage() {
           </div>
         </div>
         <div className="flex justify-end pt-2">
-          <Button type="submit" disabled={busy}>{busy ? "Submitting…" : "Submit for review"}</Button>
+          <Button type="submit" disabled={busy || !normalizedPhone}>{busy ? "Submitting…" : "Submit for review"}</Button>
         </div>
       </form>
     </div>

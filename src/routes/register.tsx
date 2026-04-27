@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
+import { normalizeNigeriaPhone, formatNigeriaPhoneDisplay } from "@/lib/phone";
 
 export const Route = createFileRoute("/register")({
   component: RegisterPage,
@@ -23,7 +24,6 @@ export const Route = createFileRoute("/register")({
 const schema = z.object({
   name: z.string().trim().min(2, "Name is required").max(100),
   profession: z.string().trim().min(2, "Profession is required").max(100),
-  phone: z.string().trim().min(7, "Enter a valid phone number").max(20),
   workshop_location: z.string().trim().min(2, "Location is required").max(200),
   available_hours: z.string().trim().max(100).optional(),
   bio: z.string().trim().max(500).optional(),
@@ -41,18 +41,28 @@ function RegisterPage() {
     available_hours: "", bio: "", submitted_by_email: "", category_id: "",
   });
 
+  const normalizedPhone = normalizeNigeriaPhone(form.phone);
+
   useEffect(() => {
     supabase.from("categories").select("*").order("name").then(({ data }) => setCategories(data ?? []));
   }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!normalizedPhone) {
+      return toast.error("Enter a valid Nigerian mobile number (e.g. 0801 234 5678)");
+    }
     const parsed = schema.safeParse(form);
     if (!parsed.success) {
       return toast.error(parsed.error.issues[0]?.message ?? "Please check the form");
     }
     setBusy(true);
-    const payload: any = { ...parsed.data, is_approved: false };
+    const payload: any = {
+      ...parsed.data,
+      phone: normalizedPhone,
+      is_approved: false,
+      phone_verified: false,
+    };
     if (!payload.category_id) delete payload.category_id;
     const { error } = await supabase.from("artisans").insert(payload);
     setBusy(false);

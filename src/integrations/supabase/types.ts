@@ -27,6 +27,8 @@ export type Database = {
           map_y: number | null
           name: string
           phone: string
+          phone_verified: boolean
+          phone_verified_at: string | null
           photo_url: string | null
           profession: string
           rating: number | null
@@ -46,6 +48,8 @@ export type Database = {
           map_y?: number | null
           name: string
           phone: string
+          phone_verified?: boolean
+          phone_verified_at?: string | null
           photo_url?: string | null
           profession: string
           rating?: number | null
@@ -65,6 +69,8 @@ export type Database = {
           map_y?: number | null
           name?: string
           phone?: string
+          phone_verified?: boolean
+          phone_verified_at?: string | null
           photo_url?: string | null
           profession?: string
           rating?: number | null

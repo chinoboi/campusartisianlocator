@@ -20,13 +20,15 @@ export function ArtisanCard({ a }: { a: Artisan }) {
     <Link
       to="/artisans/$id"
       params={{ id: a.id }}
-      className="group block bg-card rounded-2xl border border-border p-5 shadow-card hover:shadow-elegant transition-all hover:-translate-y-1"
+      className="group block bg-card rounded-2xl border border-border p-5 shadow-card hover:shadow-elegant transition-all hover:-translate-y-2"
     >
       <div className="flex items-start gap-4">
-        <div className="h-14 w-14 rounded-xl bg-hero text-primary-foreground font-display font-bold text-xl flex items-center justify-center shrink-0">
+        <div className="h-20 w-20 rounded-2xl bg-hero text-primary-foreground font-display font-bold text-2xl flex items-center justify-center shrink-0 overflow-hidden">
           {a.photo_url ? (
-            <img src={a.photo_url} alt={a.name} className="h-full w-full rounded-xl object-cover" />
-          ) : initials}
+            <img src={a.photo_url} alt={a.name} className="h-full w-full rounded-2xl object-cover" />
+          ) : (
+            <span className="px-2">{initials}</span>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
@@ -48,10 +50,28 @@ export function ArtisanCard({ a }: { a: Artisan }) {
           ) : null}
         </div>
       </div>
+
       <div className="mt-4 space-y-1.5 text-sm text-muted-foreground">
         <div className="flex items-center gap-2"><MapPin className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{a.workshop_location}</span></div>
         {a.available_hours && <div className="flex items-center gap-2"><Clock className="h-3.5 w-3.5 shrink-0" /> {a.available_hours}</div>}
-        <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 shrink-0" /> {a.phone}</div>
+
+        <div className="flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            <Phone className="h-3.5 w-3.5 shrink-0" />
+            <a href={`tel:${a.phone}`} className="truncate text-muted-foreground hover:text-foreground">{a.phone}</a>
+          </div>
+
+          {a.phone ? (
+            <a
+              href={`tel:${a.phone}`}
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-accent text-accent-foreground font-medium hover:opacity-95 transition"
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`Call ${a.name}`}
+            >
+              📞 Call
+            </a>
+          ) : null}
+        </div>
       </div>
     </Link>
   );

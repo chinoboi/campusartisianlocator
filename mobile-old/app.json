@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "Campus Artisan Locator",
+    "slug": "campusartisanlocator-mobile",
+    "version": "1.0.0",
+    "sdkVersion": "55.0.0",
+    "platforms": ["ios", "android"],
+    "assetBundlePatterns": ["**/*"],
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "extra": {
+      "SUPABASE_URL": "",
+      "SUPABASE_ANON_KEY": "",
+      "SCHOOL_LOGO_URI": ""
+    }
+  }
+}

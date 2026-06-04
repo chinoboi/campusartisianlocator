@@ -10,9 +10,19 @@ export function useIsMobile() {
     const onChange = () => {
       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     };
-    mql.addEventListener("change", onChange);
+    // Support older browsers / environments where MediaQueryList uses addListener/removeListener
+    if (typeof mql.addEventListener === 'function') {
+      mql.addEventListener('change', onChange);
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+      return () => mql.removeEventListener('change', onChange);
+    }
+    if (typeof (mql as any).addListener === 'function') {
+      (mql as any).addListener(onChange);
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+      return () => (mql as any).removeListener(onChange);
+    }
+    // Fallback: just set initial value
     setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    return () => mql.removeEventListener("change", onChange);
   }, []);
 
   return !!isMobile;

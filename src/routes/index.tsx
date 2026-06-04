@@ -2,12 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Search, MapPin, Phone, ArrowRight } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb } from "@/lib/mockDb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { ArtisanCard } from "@/components/ArtisanCard";
-import heroImg from "@/assets/campus-hero.jpg";
+import { CampusMap } from "@/components/CampusMap";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -23,10 +23,14 @@ function Index() {
   const [categories, setCategories] = useState<any[]>([]);
   const [featured, setFeatured] = useState<any[]>([]);
   const [q, setQ] = useState("");
+  const [pins, setPins] = useState<any[]>([]);
 
   useEffect(() => {
-    supabase.from("categories").select("*").order("name").then(({ data }) => setCategories(data ?? []));
-    supabase.from("artisans").select("*").order("rating", { ascending: false }).limit(4).then(({ data }) => setFeatured(data ?? []));
+    setCategories(mockDb.getCategories());
+    const all = mockDb.getArtisans(false);
+    setPins(all);
+    const sorted = [...all].sort((a, b) => b.rating - a.rating).slice(0, 4);
+    setFeatured(sorted);
   }, []);
 
   return (
@@ -63,27 +67,32 @@ function Index() {
             </form>
 
             <div className="mt-8 flex flex-wrap gap-x-8 gap-y-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> Campus map view</div>
-              <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-primary" /> Tap to call</div>
-              <div className="flex items-center gap-2"><Search className="h-4 w-4 text-primary" /> Browse by trade</div>
+              <Link to="/map" className="flex items-center gap-2 hover:text-primary transition-colors cursor-pointer">
+                <MapPin className="h-4 w-4 text-primary" /> Campus map view
+              </Link>
+              <Link to="/artisans" className="flex items-center gap-2 hover:text-primary transition-colors cursor-pointer">
+                <Phone className="h-4 w-4 text-primary" /> Tap to call
+              </Link>
+              <a href="#categories" className="flex items-center gap-2 hover:text-primary transition-colors cursor-pointer">
+                <Search className="h-4 w-4 text-primary" /> Browse by trade
+              </a>
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7 }} className="relative">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.7 }} className="relative w-full">
             <div className="absolute -inset-4 bg-hero opacity-20 blur-3xl rounded-full" />
-            <img
-              src={heroImg}
-              alt="Illustrated aerial view of the campus with workshops and students"
-              width={1536}
-              height={1024}
-              className="relative rounded-3xl shadow-elegant border border-border"
-            />
+            <div className="relative border border-border rounded-3xl shadow-elegant overflow-hidden bg-background">
+              <CampusMap pins={pins} height={460} />
+              <div className="absolute top-4 left-4 bg-background/95 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-border text-xs font-bold shadow-sm text-foreground">
+                Top Faith Campus Map
+              </div>
+            </div>
           </motion.div>
         </div>
       </section>
 
       {/* Categories */}
-      <section className="max-w-7xl mx-auto px-6 py-16">
+      <section id="categories" className="max-w-7xl mx-auto px-6 py-16">
         <div className="flex items-end justify-between mb-8">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-accent font-semibold mb-2">Browse by trade</p>

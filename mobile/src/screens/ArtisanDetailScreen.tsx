@@ -8,6 +8,7 @@ import { colors } from '../theme';
 import { Artisan, RootStackParamList, Review } from '../types';
 import { getLocalReviews, saveLocalReview } from '../lib/localStore';
 import { supabase, isSupabaseStub } from '../lib/supabase';
+import { SEED_ARTISANS } from '../data/seedData';
 
 type ArtisanDetailRouteProp = RouteProp<RootStackParamList, 'ArtisanDetail'>;
 
@@ -36,8 +37,21 @@ export function ArtisanDetailScreen() {
           return;
         }
 
-        const { data } = await supabase.from('artisans').select('*, categories(name, slug)').eq('id', id).maybeSingle();
-        setArtisan(data as Artisan | null);
+        let art = null;
+        try {
+          const res = await supabase.from('artisans').select('*, categories(name, slug)').eq('id', id).maybeSingle();
+          art = res.data;
+        } catch (e) {
+          console.warn('Supabase fetch failed, looking in seed data', e);
+        }
+
+        if (!art) {
+          const seedFound = SEED_ARTISANS.find((s) => s.id === id);
+          if (seedFound) {
+            art = seedFound;
+          }
+        }
+        setArtisan(art as Artisan | null);
         // load reviews from server when available
         try {
           const reviewsRes = isSupabaseStub

@@ -77,13 +77,17 @@ export function RegisterArtisanScreen({ navigation }: any) {
       // DB schema requires phone NOT NULL — use empty string when not provided
       phone: normalizedPhone || '',
       workshop_location: address.trim() || (lat && lon ? `${lat},${lon}` : 'Unknown'),
+      is_approved: false,
+      phone_verified: false,
     };
     if (lat && lon) {
       const latNum = parseFloat(lat);
       const lonNum = parseFloat(lon);
       if (!Number.isNaN(latNum) && !Number.isNaN(lonNum)) {
-        dbPayload.map_x = latNum;
-        dbPayload.map_y = lonNum;
+        dbPayload.latitude = latNum;
+        dbPayload.longitude = lonNum;
+        dbPayload.map_x = 50;
+        dbPayload.map_y = 50;
       }
     }
 

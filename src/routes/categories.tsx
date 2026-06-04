@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb } from "@/lib/mockDb";
 import { CategoryIcon } from "@/components/CategoryIcon";
 
 export const Route = createFileRoute("/categories")({
@@ -18,14 +18,16 @@ function CategoriesPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    (async () => {
-      const { data: cats } = await supabase.from("categories").select("*").order("name");
-      setCategories(cats ?? []);
-      const { data: artisans } = await supabase.from("artisans").select("category_id");
-      const c: Record<string, number> = {};
-      (artisans ?? []).forEach((a: any) => { c[a.category_id] = (c[a.category_id] ?? 0) + 1; });
-      setCounts(c);
-    })();
+    const cats = mockDb.getCategories();
+    setCategories(cats);
+    const artisans = mockDb.getArtisans(false);
+    const c: Record<string, number> = {};
+    artisans.forEach((a: any) => {
+      if (a.category_id) {
+        c[a.category_id] = (c[a.category_id] ?? 0) + 1;
+      }
+    });
+    setCounts(c);
   }, []);
 
   return (

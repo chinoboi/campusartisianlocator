@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb } from "@/lib/mockDb";
 import { Input } from "@/components/ui/input";
 import { ArtisanCard } from "@/components/ArtisanCard";
 import { z } from "zod";
@@ -30,15 +30,18 @@ function ArtisansPage() {
   const [activeCat, setActiveCat] = useState<string | undefined>(category);
 
   useEffect(() => {
-    supabase.from("categories").select("*").order("name").then(({ data }) => setCategories(data ?? []));
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      let query = supabase.from("artisans").select("*, categories(slug, name)").order("rating", { ascending: false });
-      const { data } = await query;
-      setArtisans(data ?? []);
-    })();
+    const cats = mockDb.getCategories();
+    setCategories(cats);
+    const arts = mockDb.getArtisans(false).map((a) => {
+      const cat = cats.find((c) => c.id === a.category_id);
+      return {
+        ...a,
+        categories: cat ? { name: cat.name, slug: cat.slug } : null,
+      };
+    });
+    // Sort by rating descending
+    arts.sort((a, b) => b.rating - a.rating);
+    setArtisans(arts);
   }, []);
 
   const filtered = useMemo(() => {

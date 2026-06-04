@@ -8,6 +8,7 @@ import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import { colors, spacing, typography, radius } from '../theme';
 import { HomeScreenNavigationProp } from '../types';
+import { SEED_CATEGORIES, SEED_ARTISANS } from '../data/seedData';
 
 export function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -22,9 +23,6 @@ export function HomeScreen() {
     const load = async () => {
       try {
         if (isSupabaseStub) {
-          // When Supabase is stubbed, avoid chaining query helpers that
-          // may not be present on the runtime client. Return empty datasets
-          // so the app can render local/demo content without crashing.
           // eslint-disable-next-line no-console
           console.warn('Supabase stub active: skipping server queries');
         }
@@ -42,11 +40,13 @@ export function HomeScreen() {
           featuredPromise,
         ]);
 
-        setCategories(categoriesData ?? []);
-        setFeatured(featuredData ?? []);
+        setCategories(categoriesData && categoriesData.length > 0 ? categoriesData : SEED_CATEGORIES);
+        setFeatured(featuredData && featuredData.length > 0 ? featuredData : SEED_ARTISANS.slice(0, 4));
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error('Error loading home data', err);
+        setCategories(SEED_CATEGORIES);
+        setFeatured(SEED_ARTISANS.slice(0, 4));
       } finally {
         setLoading(false);
       }

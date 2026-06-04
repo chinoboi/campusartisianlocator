@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { ArtisansScreenNavigationProp } from '../types';
 import { colors } from '../theme';
+import { SEED_CATEGORIES } from '../data/seedData';
 
 export function CategoriesScreen() {
   const navigation = useNavigation<ArtisansScreenNavigationProp>();
@@ -14,9 +15,14 @@ export function CategoriesScreen() {
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase.from('categories').select('*').order('name');
-      setCategories(data ?? []);
-      setLoading(false);
+      try {
+        const { data } = await supabase.from('categories').select('*').order('name');
+        setCategories(data && data.length > 0 ? data : SEED_CATEGORIES);
+      } catch (err) {
+        setCategories(SEED_CATEGORIES);
+      } finally {
+        setLoading(false);
+      }
     };
 
     load();

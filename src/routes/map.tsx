@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb } from "@/lib/mockDb";
 import { CampusMap } from "@/components/CampusMap";
 
 export const Route = createFileRoute("/map")({
@@ -17,7 +17,7 @@ function MapPage() {
   const [pins, setPins] = useState<any[]>([]);
 
   useEffect(() => {
-    supabase.from("artisans").select("id,name,profession,workshop_location,map_x,map_y").then(({ data }) => setPins(data ?? []));
+    setPins(mockDb.getArtisans(false));
   }, []);
 
   return (

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Phone, MapPin, Clock, Star, ArrowLeft } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb } from "@/lib/mockDb";
 import { Button } from "@/components/ui/button";
 import { CampusMap } from "@/components/CampusMap";
 
@@ -15,8 +15,18 @@ function ArtisanDetail() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from("artisans").select("*, categories(name, slug)").eq("id", id).maybeSingle()
-      .then(({ data }) => { setA(data); setLoading(false); });
+    const art = mockDb.getArtisan(id);
+    if (art) {
+      const cats = mockDb.getCategories();
+      const cat = cats.find((c) => c.id === art.category_id);
+      setA({
+        ...art,
+        categories: cat ? { name: cat.name, slug: cat.slug } : null,
+      });
+    } else {
+      setA(null);
+    }
+    setLoading(false);
   }, [id]);
 
   if (loading) return <div className="max-w-5xl mx-auto px-6 py-16 text-muted-foreground">Loading…</div>;

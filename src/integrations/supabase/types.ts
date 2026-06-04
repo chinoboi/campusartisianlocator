@@ -23,6 +23,8 @@ export type Database = {
           id: string
           is_approved: boolean
           is_available: boolean
+          latitude: number | null
+          longitude: number | null
           map_x: number | null
           map_y: number | null
           name: string
@@ -44,6 +46,8 @@ export type Database = {
           id?: string
           is_approved?: boolean
           is_available?: boolean
+          latitude?: number | null
+          longitude?: number | null
           map_x?: number | null
           map_y?: number | null
           name: string
@@ -65,6 +69,8 @@ export type Database = {
           id?: string
           is_approved?: boolean
           is_available?: boolean
+          latitude?: number | null
+          longitude?: number | null
           map_x?: number | null
           map_y?: number | null
           name?: string
@@ -135,6 +141,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          created_at: string
+          id: string
+          artisan_id: string
+          rating: number
+          text: string | null
+          author: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          artisan_id: string
+          rating: number
+          text?: string | null
+          author?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          artisan_id?: string
+          rating?: number
+          text?: string | null
+          author?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_artisan_id_fkey"
+            columns: ["artisan_id"]
+            isOneToOne: false
+            referencedRelation: "artisans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

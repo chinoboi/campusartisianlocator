@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { GraduationCap } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb } from "@/lib/mockDb";
 
 export function Header() {
   const { user, isAdmin } = useAuth();
@@ -37,7 +37,7 @@ export function Header() {
             </Link>
           )}
           {user ? (
-            <Button size="sm" variant="ghost" onClick={() => supabase.auth.signOut()}>Sign out</Button>
+            <Button size="sm" variant="ghost" onClick={() => mockDb.signOut()}>Sign out</Button>
           ) : (
             <Link to="/auth"><Button size="sm" variant="ghost">Sign in</Button></Link>
           )}

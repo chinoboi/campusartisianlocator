@@ -115,7 +115,7 @@ export function CampusMapScreen() {
       ) : null}
 
       <CampusMap
-        pins={artisans.map((a) => ({ id: a.id, name: a.name, latitude: (a as any).latitude, longitude: (a as any).longitude }))}
+        pins={artisans.map((a) => ({ id: a.id, name: a.name, latitude: (a as any).latitude, longitude: (a as any).longitude, profession: a.profession }))}
         height={360}
         showDemo={showDemo}
       />

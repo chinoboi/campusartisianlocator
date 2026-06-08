@@ -14,6 +14,7 @@ import { ArtisanDetailScreen } from './src/screens/ArtisanDetailScreen';
 import { RegisterArtisanScreen } from './src/screens/RegisterArtisanScreen';
 import { RegisterSuccessScreen } from './src/screens/RegisterSuccessScreen';
 import { SchoolLogo } from './src/components/SchoolLogo';
+import { AdminScreen } from './src/screens/AdminScreen';
 import { colors } from './src/theme';
 
 const Stack = createNativeStackNavigator();
@@ -66,6 +67,7 @@ export default function App() {
           <Stack.Screen name="ArtisanDetail" component={ArtisanDetailScreen} options={{ title: 'Artisan details' }} />
           <Stack.Screen name="Register" component={RegisterArtisanScreen} options={{ title: 'Register artisan' }} />
           <Stack.Screen name="RegisterSuccess" component={RegisterSuccessScreen} options={{ title: 'Registration complete' }} />
+          <Stack.Screen name="Admin" component={AdminScreen} options={{ title: 'Admin Panel' }} />
         </Stack.Navigator>
       </NavigationContainer>
       <StatusBar style="dark" />

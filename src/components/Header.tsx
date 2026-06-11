@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { GraduationCap } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb } from "@/lib/mockDb";
+import logoImg from "@/assets/top-faith-logo.png";
 
 export function Header() {
   const { user, isAdmin } = useAuth();
@@ -11,9 +11,11 @@ export function Header() {
     <header className="sticky top-0 z-40 backdrop-blur-md bg-background/80 border-b border-border">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="h-9 w-9 rounded-lg bg-hero flex items-center justify-center shadow-card">
-            <GraduationCap className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <img
+            src={logoImg}
+            alt="Top Faith University Logo"
+            className="h-9 w-9 rounded-lg shadow-card object-cover"
+          />
           <div className="leading-tight">
             <div className="font-display font-bold text-lg text-foreground">Campus Artisans</div>
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Locator</div>
@@ -37,7 +39,7 @@ export function Header() {
             </Link>
           )}
           {user ? (
-            <Button size="sm" variant="ghost" onClick={() => supabase.auth.signOut()}>Sign out</Button>
+            <Button size="sm" variant="ghost" onClick={() => mockDb.signOut()}>Sign out</Button>
           ) : (
             <Link to="/auth"><Button size="sm" variant="ghost">Sign in</Button></Link>
           )}

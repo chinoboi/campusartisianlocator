@@ -8,6 +8,8 @@ import { colors } from '../theme';
 import { Artisan, RootStackParamList, Review } from '../types';
 import { getLocalReviews, saveLocalReview } from '../lib/localStore';
 import { supabase, isSupabaseStub } from '../lib/supabase';
+import { SEED_ARTISANS } from '../data/seedData';
+import CampusMap from '../components/CampusMap';
 
 type ArtisanDetailRouteProp = RouteProp<RootStackParamList, 'ArtisanDetail'>;
 
@@ -36,17 +38,49 @@ export function ArtisanDetailScreen() {
           return;
         }
 
-        const { data } = await supabase.from('artisans').select('*, categories(name, slug)').eq('id', id).maybeSingle();
-        setArtisan(data as Artisan | null);
+        let art = null;
+        try {
+          const res = await supabase.from('artisans').select('*, categories(name, slug)').eq('id', id).maybeSingle();
+          art = res.data;
+        } catch (e) {
+          console.warn('Supabase fetch failed, looking in seed data', e);
+        }
+
+        if (!art) {
+          const seedFound = SEED_ARTISANS.find((s) => s.id === id);
+          if (seedFound) {
+            art = seedFound;
+          }
+        }
+        setArtisan(art as Artisan | null);
         // load reviews from server when available
+        let serverReviews: Review[] = [];
         try {
           const reviewsRes = isSupabaseStub
             ? { data: [] }
             : await supabase.from('reviews').select('*').eq('artisan_id', id).order('created_at', { ascending: false }).limit(50);
-          setReviews((reviewsRes as any).data ?? []);
+          serverReviews = (reviewsRes as any).data ?? [];
         } catch (e) {
           // ignore server review errors
         }
+
+        // load local reviews
+        let localReviews: Review[] = [];
+        try {
+          localReviews = await getLocalReviews(id) as Review[];
+        } catch (e) {
+          // ignore
+        }
+
+        // merge reviews, filtering duplicates by id
+        const mergedMap = new Map<string, Review>();
+        serverReviews.forEach((r) => mergedMap.set(r.id, r));
+        localReviews.forEach((r) => mergedMap.set(r.id, r));
+        setReviews(
+          Array.from(mergedMap.values()).sort(
+            (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+          )
+        );
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error('Error loading artisan detail', err);
@@ -79,19 +113,7 @@ export function ArtisanDetailScreen() {
   const phoneUri = `tel:${artisan.phone.replace(/\s/g, '')}`;
   const smsUri = `sms:${artisan.phone.replace(/\s/g, '')}`;
 
-  const loadLocalReviews = async () => {
-    try {
-      const local = await getLocalReviews(id);
-      setReviews(local as Review[]);
-    } catch (e) {
-      // ignore
-    }
-  };
 
-  useEffect(() => {
-    loadLocalReviews();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -133,6 +155,12 @@ export function ArtisanDetailScreen() {
             <Text style={styles.messageButtonText}>Send SMS</Text>
           </Pressable>
         </View>
+
+        <View style={{ marginTop: 24, marginBottom: 12 }}>
+          <Text style={{ fontWeight: '700', marginBottom: 10, textTransform: 'uppercase', fontSize: 12, color: colors.accent, letterSpacing: 1 }}>Find on campus</Text>
+          <CampusMap pins={[artisan]} height={220} />
+        </View>
+
         <View style={{ marginTop: 18 }}>
           <ReviewForm
             submitting={submittingReview}

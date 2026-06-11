@@ -1,17 +1,17 @@
 export const colors = {
-  // Brand — richer for a tactile, realistic feel
-  primary: '#2563EB',
-  primaryDark: '#1E40AF',
-  accent: '#FB923C',
+  // Brand — matching the premium indigo/violet web app palette
+  primary: '#4F46E5',
+  primaryDark: '#4338CA',
+  accent: '#8B5CF6',
 
   // Surfaces
-  background: '#F4F6F8',
+  background: '#F8FAFC',
   surface: '#FFFFFF',
 
   // Text / UI
-  text: '#0B1220',
-  muted: '#6B7280',
-  border: '#E6EEF0',
+  text: '#0F172A',
+  muted: '#64748B',
+  border: '#E2E8F0',
 
   // Status
   success: '#10B981',

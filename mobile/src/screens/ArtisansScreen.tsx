@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, Alert, Platform } from 'react-native';
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { supabase, isSupabaseStub } from '../lib/supabase';
 import { getLocalArtisans, clearLocalArtisans } from '../lib/localStore';
@@ -8,6 +8,7 @@ import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { colors, spacing, typography, radius } from '../theme';
 import { Artisan, ArtisansScreenNavigationProp, RootStackParamList } from '../types';
+import { SEED_CATEGORIES, SEED_ARTISANS } from '../data/seedData';
 
 type ArtisansRouteProp = RouteProp<RootStackParamList, 'Artisans'>;
 
@@ -30,12 +31,42 @@ export function ArtisansScreen() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [{ data: artisanData }, { data: categoryData }] = await Promise.all([
-        supabase.from('artisans').select('*, categories(slug, name)').order('rating', { ascending: false }),
-        supabase.from('categories').select('*').order('name'),
-      ]);
+      let artisanData = [];
+      let categoryData = [];
 
-      let artisansList = (artisanData ?? []) as Artisan[];
+      try {
+        const res = await supabase.from('artisans').select('*, categories(slug, name)').order('rating', { ascending: false });
+        artisanData = res.data ?? [];
+      } catch (e) {
+        console.warn('Supabase artisan fetch failed, using seed data:', e);
+      }
+
+      try {
+        const res = await supabase.from('categories').select('*').order('name');
+        categoryData = res.data ?? [];
+      } catch (e) {
+        console.warn('Supabase category fetch failed, using seed data:', e);
+      }
+
+      let artisansList = (artisanData && artisanData.length > 0)
+        ? (artisanData as any[])
+        : SEED_ARTISANS;
+
+      artisansList = artisansList.map((a: any) => {
+        let lat = a.latitude;
+        let lon = a.longitude;
+        if (lat === null || lat === undefined || lon === null || lon === undefined) {
+          const mapX = a.map_x ?? 50;
+          const mapY = a.map_y ?? 50;
+          lat = 5.052114 + (mapX - 50) * 0.0001;
+          lon = 7.67045 + (mapY - 50) * 0.0001;
+        }
+        return {
+          ...a,
+          latitude: lat,
+          longitude: lon,
+        };
+      });
 
       // always include locally saved artisans (merge on top) so registrations are visible
       try {
@@ -59,10 +90,12 @@ export function ArtisansScreen() {
       }
 
       setArtisans(artisansList);
-      setCategories(categoryData ?? []);
+      setCategories(categoryData && categoryData.length > 0 ? categoryData : SEED_CATEGORIES);
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Error loading artisans/categories', err);
+      setArtisans(SEED_ARTISANS);
+      setCategories(SEED_CATEGORIES);
     } finally {
       setLoading(false);
     }
@@ -116,39 +149,79 @@ export function ArtisansScreen() {
         <View style={styles.localButtonsRow}>
           <Button title={showLocalOnly ? 'Show All' : 'Show Local'} variant="outline" onPress={() => setShowLocalOnly((s) => !s)} />
           {!isSupabaseStub && localArtisans.length > 0 ? (
-            <Button title={migrating ? 'Migrating…' : 'Migrate'} variant="outline" onPress={async () => {
-              const ok = confirm('Migrate local saved artisans to Supabase?');
-              if (!ok) return;
-              setMigrating(true);
-              try {
-                const payload = localArtisans.map((l) => ({
-                  name: l.name,
-                  profession: l.category ?? null,
-                  phone: l.phone ?? null,
-                  workshop_location: l.address ?? null,
-                  latitude: l.latitude ?? null,
-                  longitude: l.longitude ?? null,
-                }));
-                const { error } = await supabase.from('artisans').insert(payload);
-                if (error) throw error;
-                await clearLocalArtisans();
-                setLocalArtisans([]);
-                load();
-                alert('Migration successful.');
-              } catch (err) {
-                console.error('Migration error', err);
-                alert('Migration failed. See console for details.');
-              } finally {
-                setMigrating(false);
+            <Button title={migrating ? 'Migrating…' : 'Migrate'} variant="outline" onPress={() => {
+              const runMigration = async () => {
+                setMigrating(true);
+                try {
+                  const payload = localArtisans.map((l) => ({
+                    name: l.name,
+                    profession: l.category ?? null,
+                    phone: l.phone ?? null,
+                    workshop_location: l.address ?? null,
+                    latitude: l.latitude ?? null,
+                    longitude: l.longitude ?? null,
+                    map_x: 50,
+                    map_y: 50,
+                    is_approved: false,
+                    phone_verified: false,
+                  }));
+                  const { error } = await supabase.from('artisans').insert(payload);
+                  if (error) throw error;
+                  await clearLocalArtisans();
+                  setLocalArtisans([]);
+                  load();
+                  if (Platform.OS === 'web') {
+                    alert('Migration successful.');
+                  } else {
+                    Alert.alert('Success', 'Migration successful.');
+                  }
+                } catch (err) {
+                  console.error('Migration error', err);
+                  if (Platform.OS === 'web') {
+                    alert('Migration failed. See console for details.');
+                  } else {
+                    Alert.alert('Error', 'Migration failed. See console for details.');
+                  }
+                } finally {
+                  setMigrating(false);
+                }
+              };
+
+              if (Platform.OS === 'web') {
+                const ok = confirm('Migrate local saved artisans to Supabase?');
+                if (ok) runMigration();
+              } else {
+                Alert.alert(
+                  'Migrate to Supabase',
+                  'Migrate local saved artisans to Supabase?',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'OK', onPress: runMigration }
+                  ]
+                );
               }
             }} />
           ) : (
-            <Button title="Clear local" variant="outline" onPress={async () => {
-              const ok = confirm('Clear local saved artisans? This cannot be undone.');
-              if (!ok) return;
-              await clearLocalArtisans();
-              setLocalArtisans([]);
-              load();
+            <Button title="Clear local" variant="outline" onPress={() => {
+              const runClear = async () => {
+                await clearLocalArtisans();
+                setLocalArtisans([]);
+                load();
+              };
+
+              if (Platform.OS === 'web') {
+                const ok = confirm('Clear local saved artisans? This cannot be undone.');
+                if (ok) runClear();
+              } else {
+                Alert.alert(
+                  'Clear Local Data',
+                  'Clear local saved artisans? This cannot be undone.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'OK', onPress: runClear }
+                  ]
+                );
+              }
             }} />
           )}
         </View>

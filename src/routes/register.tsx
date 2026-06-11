@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb } from "@/lib/mockDb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
 import { normalizeNigeriaPhone, formatNigeriaPhoneDisplay } from "@/lib/phone";
+import { z } from "zod";
+
 
 export const Route = createFileRoute("/register")({
   component: RegisterPage,
@@ -28,7 +29,7 @@ const schema = z.object({
   available_hours: z.string().trim().max(100).optional(),
   bio: z.string().trim().max(500).optional(),
   submitted_by_email: z.string().trim().email("Enter a valid email").max(255),
-  category_id: z.string().uuid().optional().or(z.literal("")),
+  category_id: z.string().optional().or(z.literal("")),
 });
 
 function RegisterPage() {
@@ -44,7 +45,7 @@ function RegisterPage() {
   const normalizedPhone = normalizeNigeriaPhone(form.phone);
 
   useEffect(() => {
-    supabase.from("categories").select("*").order("name").then(({ data }) => setCategories(data ?? []));
+    setCategories(mockDb.getCategories());
   }, []);
 
   const submit = async (e: React.FormEvent) => {
@@ -63,11 +64,32 @@ function RegisterPage() {
       is_approved: false,
       phone_verified: false,
     };
-    if (!payload.category_id) delete payload.category_id;
-    const { error } = await supabase.from("artisans").insert(payload);
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    setSubmitted(true);
+    try {
+      mockDb.insertArtisan({
+        name: payload.name,
+        profession: payload.profession,
+        category_id: payload.category_id || null,
+        phone: payload.phone,
+        phone_verified: false,
+        phone_verified_at: null,
+        workshop_location: payload.workshop_location,
+        map_x: 50,
+        map_y: 50,
+        latitude: null,
+        longitude: null,
+        available_hours: payload.available_hours || null,
+        bio: payload.bio || null,
+        photo_url: null,
+        is_available: true,
+        is_approved: false,
+        submitted_by_email: payload.submitted_by_email,
+      });
+      setBusy(false);
+      setSubmitted(true);
+    } catch (err: any) {
+      setBusy(false);
+      toast.error(err.message || "Failed to register");
+    }
   };
 
   if (submitted) {

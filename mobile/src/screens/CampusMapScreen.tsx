@@ -19,9 +19,29 @@ export function CampusMapScreen() {
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase.from('artisans').select('*').order('rating', { ascending: false });
-      setArtisans((data ?? []) as Artisan[]);
-      setLoading(false);
+      try {
+        const { data } = await supabase.from('artisans').select('*').order('rating', { ascending: false });
+        const mapped = (data ?? []).map((a: any) => {
+          let lat = a.latitude;
+          let lon = a.longitude;
+          if (lat === null || lat === undefined || lon === null || lon === undefined) {
+            const mapX = a.map_x ?? 50;
+            const mapY = a.map_y ?? 50;
+            lat = 5.052114 + (mapX - 50) * 0.0001;
+            lon = 7.67045 + (mapY - 50) * 0.0001;
+          }
+          return {
+            ...a,
+            latitude: lat,
+            longitude: lon,
+          };
+        }) as Artisan[];
+        setArtisans(mapped);
+      } catch (err) {
+        console.error('Error loading artisans', err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     load();
@@ -45,7 +65,22 @@ export function CampusMapScreen() {
       setLoading(true);
       try {
         const { data } = await supabase.from('artisans').select('*').order('rating', { ascending: false });
-        setArtisans((data ?? []) as Artisan[]);
+        const mapped = (data ?? []).map((a: any) => {
+          let lat = a.latitude;
+          let lon = a.longitude;
+          if (lat === null || lat === undefined || lon === null || lon === undefined) {
+            const mapX = a.map_x ?? 50;
+            const mapY = a.map_y ?? 50;
+            lat = 5.052114 + (mapX - 50) * 0.0001;
+            lon = 7.67045 + (mapY - 50) * 0.0001;
+          }
+          return {
+            ...a,
+            latitude: lat,
+            longitude: lon,
+          };
+        }) as Artisan[];
+        setArtisans(mapped);
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error('Error loading artisans from Supabase', err);
@@ -80,7 +115,7 @@ export function CampusMapScreen() {
       ) : null}
 
       <CampusMap
-        pins={artisans.map((a) => ({ id: a.id, name: a.name, latitude: (a as any).latitude, longitude: (a as any).longitude }))}
+        pins={artisans.map((a) => ({ id: a.id, name: a.name, latitude: (a as any).latitude, longitude: (a as any).longitude, profession: a.profession }))}
         height={360}
         showDemo={showDemo}
       />

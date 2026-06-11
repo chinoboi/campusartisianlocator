@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb } from "@/lib/mockDb";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ export const Route = createFileRoute("/admin")({
 const empty = {
   id: "", name: "", profession: "", phone: "", workshop_location: "",
   available_hours: "", bio: "", category_id: "", map_x: 50, map_y: 50,
+  latitude: null as number | null, longitude: null as number | null,
   is_available: true, is_approved: true, phone_verified: false,
 };
 
@@ -35,10 +36,23 @@ function AdminPage() {
   }, [user, loading, navigate]);
 
   const refresh = async () => {
-    const { data: a } = await supabase.from("artisans").select("*, categories(name)").order("is_approved", { ascending: true }).order("created_at", { ascending: false });
-    setArtisans(a ?? []);
-    const { data: c } = await supabase.from("categories").select("*").order("name");
-    setCategories(c ?? []);
+    const cats = mockDb.getCategories();
+    setCategories(cats);
+    const arts = mockDb.getArtisans(true).map((a) => {
+      const cat = cats.find((c) => c.id === a.category_id);
+      return {
+        ...a,
+        categories: cat ? { name: cat.name } : null,
+      };
+    });
+    // Sort: unapproved (pending) first, then by created_at descending
+    arts.sort((x, y) => {
+      if (x.is_approved === y.is_approved) {
+        return new Date(y.created_at).getTime() - new Date(x.created_at).getTime();
+      }
+      return x.is_approved ? 1 : -1;
+    });
+    setArtisans(arts);
   };
 
   useEffect(() => { if (isAdmin) refresh(); }, [isAdmin]);
@@ -70,6 +84,8 @@ function AdminPage() {
     if (!payload.category_id) payload.category_id = null;
     payload.map_x = Number(payload.map_x);
     payload.map_y = Number(payload.map_y);
+    payload.latitude = payload.latitude !== "" && payload.latitude !== null && payload.latitude !== undefined ? Number(payload.latitude) : null;
+    payload.longitude = payload.longitude !== "" && payload.longitude !== null && payload.longitude !== undefined ? Number(payload.longitude) : null;
     // If admin just toggled phone_verified on, stamp the timestamp
     if (payload.phone_verified && !payload.phone_verified_at) {
       payload.phone_verified_at = new Date().toISOString();
@@ -77,10 +93,11 @@ function AdminPage() {
     if (!payload.phone_verified) payload.phone_verified_at = null;
 
     const { id, ...rest } = payload;
-    const { error } = id
-      ? await supabase.from("artisans").update(rest).eq("id", id)
-      : await supabase.from("artisans").insert(rest);
-    if (error) return toast.error(error.message);
+    if (id) {
+      mockDb.updateArtisan(id, rest);
+    } else {
+      mockDb.insertArtisan(rest);
+    }
     toast.success("Saved");
     setEditing(null);
     refresh();
@@ -88,18 +105,14 @@ function AdminPage() {
 
   const verifyPhone = async (a: any) => {
     if (!confirm(`Confirm you've called ${a.phone} and spoken to ${a.name}?`)) return;
-    const { error } = await supabase.from("artisans")
-      .update({ phone_verified: true, phone_verified_at: new Date().toISOString() })
-      .eq("id", a.id);
-    if (error) return toast.error(error.message);
+    mockDb.updateArtisan(a.id, { phone_verified: true, phone_verified_at: new Date().toISOString() });
     toast.success("Phone marked verified");
     refresh();
   };
 
   const del = async (id: string) => {
     if (!confirm("Delete this artisan?")) return;
-    const { error } = await supabase.from("artisans").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    mockDb.deleteArtisan(id);
     toast.success("Deleted");
     refresh();
   };
@@ -155,7 +168,7 @@ function AdminPage() {
                     <button onClick={() => verifyPhone(a)} className="inline-flex p-2 hover:bg-secondary rounded-md text-primary" title="Mark phone verified (after calling)"><ShieldCheck className="h-4 w-4" /></button>
                   )}
                   {!a.is_approved && (
-                    <button onClick={async () => { const { error } = await supabase.from("artisans").update({ is_approved: true }).eq("id", a.id); if (error) return toast.error(error.message); toast.success("Approved"); refresh(); }} className="inline-flex p-2 hover:bg-secondary rounded-md text-primary" title="Approve"><Check className="h-4 w-4" /></button>
+                    <button onClick={async () => { mockDb.updateArtisan(a.id, { is_approved: true }); toast.success("Approved"); refresh(); }} className="inline-flex p-2 hover:bg-secondary rounded-md text-primary" title="Approve"><Check className="h-4 w-4" /></button>
                   )}
                   <button onClick={() => setEditing(a)} className="inline-flex p-2 hover:bg-secondary rounded-md"><Pencil className="h-4 w-4" /></button>
                   <button onClick={() => del(a.id)} className="inline-flex p-2 hover:bg-secondary rounded-md text-destructive"><Trash2 className="h-4 w-4" /></button>
@@ -204,6 +217,8 @@ function AdminPage() {
               </div>
               <div><Label>Map X (0–100)</Label><Input type="number" min="0" max="100" value={editing.map_x} onChange={(e) => setEditing({ ...editing, map_x: e.target.value })} /></div>
               <div><Label>Map Y (0–100)</Label><Input type="number" min="0" max="100" value={editing.map_y} onChange={(e) => setEditing({ ...editing, map_y: e.target.value })} /></div>
+              <div><Label>Latitude (geographic)</Label><Input type="number" step="any" value={editing.latitude ?? ""} onChange={(e) => setEditing({ ...editing, latitude: e.target.value === "" ? null : e.target.value })} placeholder="e.g. 5.052114" /></div>
+              <div><Label>Longitude (geographic)</Label><Input type="number" step="any" value={editing.longitude ?? ""} onChange={(e) => setEditing({ ...editing, longitude: e.target.value === "" ? null : e.target.value })} placeholder="e.g. 7.67045" /></div>
               <div className="md:col-span-2"><Label>Bio</Label><Textarea value={editing.bio ?? ""} onChange={(e) => setEditing({ ...editing, bio: e.target.value })} /></div>
             </div>
             <div className="flex gap-2 justify-end pt-2">

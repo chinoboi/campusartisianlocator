@@ -9,6 +9,9 @@ export type LocalArtisan = {
   address?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  submitted_by_email?: string | null;
+  available_hours?: string | null;
+  bio?: string | null;
   created_at: string;
 };
 

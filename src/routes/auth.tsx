@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { mockDb } from "@/lib/mockDb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,21 +23,15 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email, password,
-          options: { emailRedirectTo: `${window.location.origin}/` },
-        });
-        if (error) throw error;
         toast.success("Account created. You can now sign in.");
         setMode("signin");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        mockDb.signIn(email);
         toast.success("Signed in");
         navigate({ to: "/" });
       }
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(err.message || "Failed to authenticate");
     } finally {
       setLoading(false);
     }

@@ -13,19 +13,29 @@ export function RegisterArtisanScreen({ navigation }: any) {
   const [address, setAddress] = useState('');
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
+  const [email, setEmail] = useState('');
+  const [availableHours, setAvailableHours] = useState('');
+  const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
 
   const submit = async () => {
     // clear previous errors
     setNameError(null);
     setPhoneError(null);
+    setEmailError(null);
     setLocationError(null);
 
     if (!name.trim()) {
       setNameError('Please enter the artisan name');
+      return;
+    }
+
+    if (!email.trim() || !email.includes('@')) {
+      setEmailError('Please enter a valid email address');
       return;
     }
 
@@ -60,6 +70,9 @@ export function RegisterArtisanScreen({ navigation }: any) {
       category: category.trim() || null,
       phone: normalizedPhone || null,
       address: address.trim() || null,
+      submitted_by_email: email.trim(),
+      available_hours: availableHours.trim() || null,
+      bio: bio.trim() || null,
     };
     if (lat && lon) {
       const latNum = parseFloat(lat);
@@ -79,6 +92,9 @@ export function RegisterArtisanScreen({ navigation }: any) {
       workshop_location: address.trim() || (lat && lon ? `${lat},${lon}` : 'Unknown'),
       is_approved: false,
       phone_verified: false,
+      submitted_by_email: email.trim(),
+      available_hours: availableHours.trim() || null,
+      bio: bio.trim() || null,
     };
     if (lat && lon) {
       const latNum = parseFloat(lat);
@@ -96,12 +112,22 @@ export function RegisterArtisanScreen({ navigation }: any) {
         // Supabase keys missing — save locally so the app still works offline
         // eslint-disable-next-line no-console
         console.warn('Supabase keys missing — saving artisan locally', localPayload);
-        const localId = `local-${Date.now()}`;
-        const saved = await saveLocalArtisan({ id: localId, name: localPayload.name, category: localPayload.category ?? null, phone: localPayload.phone ?? null, address: localPayload.address ?? null, latitude: localPayload.latitude ?? null, longitude: localPayload.longitude ?? null });
+        const saved = await saveLocalArtisan({
+          id: localId,
+          name: localPayload.name,
+          category: localPayload.category ?? null,
+          phone: localPayload.phone ?? null,
+          address: localPayload.address ?? null,
+          latitude: localPayload.latitude ?? null,
+          longitude: localPayload.longitude ?? null,
+          submitted_by_email: localPayload.submitted_by_email,
+          available_hours: localPayload.available_hours,
+          bio: localPayload.bio,
+        });
         // eslint-disable-next-line no-console
         console.log('Saved local artisan', saved);
         Alert.alert('Saved locally', `Saved artisan ${saved.name} (id: ${saved.id})`);
-        navigation.navigate('Artisans');
+        navigation.navigate('RegisterSuccess', { name: saved.name, id: saved.id });
         return;
       }
 
@@ -110,7 +136,7 @@ export function RegisterArtisanScreen({ navigation }: any) {
       // eslint-disable-next-line no-console
       console.log('Registered artisan', data);
       Alert.alert('Registered', `Registered artisan ${dbPayload.name}`);
-      navigation.navigate('Artisans');
+      navigation.navigate('RegisterSuccess', { name: dbPayload.name, id: data?.id || null });
     } catch (err: any) {
       // If Supabase insert fails (for example due to RLS or constraint), fall back to saving locally
       // eslint-disable-next-line no-console
@@ -119,11 +145,22 @@ export function RegisterArtisanScreen({ navigation }: any) {
       const supabaseDetails = err?.details ? `\nDetails: ${err.details}` : '';
       try {
         const localId = `local-${Date.now()}`;
-        const saved = await saveLocalArtisan({ id: localId, name: localPayload.name, category: localPayload.category ?? null, phone: localPayload.phone ?? null, address: localPayload.address ?? null, latitude: localPayload.latitude ?? null, longitude: localPayload.longitude ?? null });
+        const saved = await saveLocalArtisan({
+          id: localId,
+          name: localPayload.name,
+          category: localPayload.category ?? null,
+          phone: localPayload.phone ?? null,
+          address: localPayload.address ?? null,
+          latitude: localPayload.latitude ?? null,
+          longitude: localPayload.longitude ?? null,
+          submitted_by_email: localPayload.submitted_by_email,
+          available_hours: localPayload.available_hours,
+          bio: localPayload.bio,
+        });
         // eslint-disable-next-line no-console
         console.log('Saved local artisan after Supabase failure', saved);
         Alert.alert('Saved locally', `Saved artisan ${saved.name} (id: ${saved.id}). Supabase error: ${supabaseMsg}${supabaseDetails}`);
-        navigation.navigate('Artisans');
+        navigation.navigate('RegisterSuccess', { name: saved.name, id: saved.id });
       } catch (localErr) {
         // eslint-disable-next-line no-console
         console.error('Failed to save locally after Supabase error', localErr);
@@ -146,11 +183,18 @@ export function RegisterArtisanScreen({ navigation }: any) {
       <Input label="Phone" value={phone} onChangeText={(v) => { setPhone(v); setPhoneError(null); }} placeholder="Phone number" keyboardType="phone-pad" compact />
       {phoneError ? <Text style={styles.error}>{phoneError}</Text> : null}
 
-      <Input label="Address / Notes" value={address} onChangeText={(v) => { setAddress(v); setLocationError(null); }} placeholder="Location on campus" multiline compact />
+      <Input label="Your Email" value={email} onChangeText={(v) => { setEmail(v); setEmailError(null); }} placeholder="for admin to contact you" keyboardType="email-address" autoCapitalize="none" compact />
+      {emailError ? <Text style={styles.error}>{emailError}</Text> : null}
 
-      <Input label="Latitude" value={latitude} onChangeText={(v) => { setLatitude(v); setLocationError(null); }} placeholder="5.052114" keyboardType="numeric" compact />
+      <Input label="Workshop Location" value={address} onChangeText={(v) => { setAddress(v); setLocationError(null); }} placeholder="e.g. Behind Hall 3, near the cafeteria" multiline compact />
 
-      <Input label="Longitude" value={longitude} onChangeText={(v) => { setLongitude(v); setLocationError(null); }} placeholder="7.67045" keyboardType="numeric" compact />
+      <Input label="Available Hours" value={availableHours} onChangeText={setAvailableHours} placeholder="e.g. Mon–Sat, 9am–6pm" compact />
+
+      <Input label="Short Bio" value={bio} onChangeText={setBio} placeholder="Tell students about your experience…" multiline compact />
+
+      <Input label="Latitude (Optional)" value={latitude} onChangeText={(v) => { setLatitude(v); setLocationError(null); }} placeholder="5.052114" keyboardType="numeric" compact />
+
+      <Input label="Longitude (Optional)" value={longitude} onChangeText={(v) => { setLongitude(v); setLocationError(null); }} placeholder="7.67045" keyboardType="numeric" compact />
       {locationError ? <Text style={styles.error}>{locationError}</Text> : null}
 
       <View style={styles.submitRow}>

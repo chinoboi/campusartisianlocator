@@ -38,6 +38,7 @@ export type RootStackParamList = {
   ArtisanDetail: { id: string };
   Register: undefined;
   RegisterSuccess: { name: string; id?: string | null } | undefined;
+  Admin: undefined;
 };
 
 export type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;

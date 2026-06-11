@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, ScrollView, Pressable } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { supabase, isSupabaseStub } from '../lib/supabase';
 import { ArtisanCard } from '../components/ArtisanCard';
@@ -87,13 +88,27 @@ export function HomeScreen() {
         </View>
 
         <View style={styles.featuresRow}>
-          <Text style={styles.featureItem}>Campus map view</Text>
-          <Text style={styles.featureItem}>Tap to call</Text>
-          <Text style={styles.featureItem}>Browse by trade</Text>
+          <Pressable style={styles.featureLink} onPress={() => navigation.navigate('CampusMap')}>
+            <Feather name="map-pin" size={16} color={colors.primary} style={styles.featureIcon} />
+            <Text style={styles.featureLinkText}>Campus map view</Text>
+          </Pressable>
+          <Pressable style={styles.featureLink} onPress={() => navigation.navigate('Artisans')}>
+            <Feather name="phone" size={16} color={colors.primary} style={styles.featureIcon} />
+            <Text style={styles.featureLinkText}>Tap to call</Text>
+          </Pressable>
+          <Pressable style={styles.featureLink} onPress={() => navigation.navigate('Categories')}>
+            <Feather name="search" size={16} color={colors.primary} style={styles.featureIcon} />
+            <Text style={styles.featureLinkText}>Browse by trade</Text>
+          </Pressable>
         </View>
 
         <View style={styles.ctaRow}>
-          <Button title="Register as artisan" variant="outline" onPress={() => navigation.navigate('Register')} />
+          <View style={{ flex: 1, marginRight: 8 }}>
+            <Button title="Register as artisan" variant="outline" onPress={() => navigation.navigate('Register')} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button title="Admin Panel" variant="outline" onPress={() => navigation.navigate('Admin')} />
+          </View>
         </View>
       </View>
 
@@ -150,6 +165,15 @@ export function HomeScreen() {
           ))}
         </View>
       )}
+
+      {/* Map CTA Card */}
+      <View style={styles.mapCtaCard}>
+        <Text style={styles.mapCtaTitle}>See every workshop on the campus map.</Text>
+        <Text style={styles.mapCtaText}>A clear, interactive map shows you exactly where each artisan is located.</Text>
+        <Pressable style={styles.mapCtaButton} onPress={() => navigation.navigate('CampusMap')}>
+          <Text style={styles.mapCtaButtonText}>Open campus map →</Text>
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }
@@ -216,11 +240,22 @@ const styles = StyleSheet.create({
   featuresRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    marginTop: spacing.md,
+    gap: 16,
   },
-  featureItem: {
+  featureLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12,
+    marginVertical: 4,
+  },
+  featureIcon: {
+    marginRight: 6,
+  },
+  featureLinkText: {
     color: colors.muted,
-    marginRight: spacing.sm,
-    marginBottom: 6,
+    fontSize: 14,
+    fontWeight: '600',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -291,6 +326,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   ctaRow: {
+    flexDirection: 'row',
     marginTop: spacing.sm,
     marginBottom: spacing.sm,
   },
@@ -309,5 +345,39 @@ const styles = StyleSheet.create({
   },
   artisanGrid: {
     paddingBottom: 8,
+  },
+  mapCtaCard: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginTop: 28,
+    marginBottom: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mapCtaTitle: {
+    color: '#FFFFFF',
+    fontSize: typography.h2,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  mapCtaText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: typography.body,
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 22,
+  },
+  mapCtaButton: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.md,
+  },
+  mapCtaButtonText: {
+    color: colors.primary,
+    fontWeight: '800',
+    fontSize: typography.body,
   },
 });

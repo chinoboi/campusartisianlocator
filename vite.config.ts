@@ -11,6 +11,9 @@ export default defineConfig({
     react(),
     tsconfigPaths(),
   ],
+  preview: {
+    allowedHosts: true,
+  }
 });
 
 
